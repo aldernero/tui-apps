@@ -22,30 +22,31 @@ const (
 )
 
 type Model struct {
-	grid     *automata.Grid
-	noise    gaul.Rng
-	offset   float64
-	timer    timer.Model
-	seed     int64
-	speed    int
-	rows     int
-	cols     int
-	wrapEnds bool
+	Grid     *automata.Grid
+	Noise    gaul.Rng
+	Offset   float64
+	Timer    timer.Model
+	Seed     int64
+	Speed    int
+	Rows     int
+	Cols     int
+	WrapEnds bool
+	palette  int
 }
 
 func StartTea(seed int64) {
 	m := Model{
-		grid:  automata.NewGrid(1, 1, seed),
-		noise: gaul.NewRng(seed),
-		seed:  seed,
-		speed: defaultSpeed,
-		timer: timer.NewWithInterval(timeout, GetDelay(defaultSpeed)),
+		Grid:  automata.NewGrid(1, 1, seed),
+		Noise: gaul.NewRng(seed),
+		Seed:  seed,
+		Speed: defaultSpeed,
+		Timer: timer.NewWithInterval(timeout, GetDelay(defaultSpeed)),
 	}
-	m.noise.SetNoiseOctaves(2)
-	m.noise.SetNoisePersistence(0.23)
-	m.noise.SetNoiseLacunarity(0.3)
-	m.noise.SetNoiseScaleX(0.01)
-	m.noise.SetNoiseScaleY(0.01)
+	m.Noise.SetNoiseOctaves(2)
+	m.Noise.SetNoisePersistence(0.23)
+	m.Noise.SetNoiseLacunarity(0.3)
+	m.Noise.SetNoiseScaleX(0.01)
+	m.Noise.SetNoiseScaleY(0.01)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Println("Error running program:", err)
@@ -59,7 +60,7 @@ func GetDelay(level int) time.Duration {
 }
 
 func (m Model) Init() tea.Cmd {
-	return m.timer.Init()
+	return m.Timer.Init()
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -71,42 +72,52 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEnter, tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
 		case tea.KeySpace:
-			m.grid.ToggleWrap()
+			m.Grid.ToggleWrap()
 		case tea.KeyRight:
-			m.grid.IncrementSeed()
+			m.Grid.IncrementSeed()
 		case tea.KeyLeft:
-			m.grid.DecrementSeed()
+			m.Grid.DecrementSeed()
 		case tea.KeyUp:
-			if m.speed < speedLevels {
-				m.speed++
-				m.timer.Interval = GetDelay(m.speed)
+			if m.Speed < speedLevels {
+				m.Speed++
+				m.Timer.Interval = GetDelay(m.Speed)
 			}
 		case tea.KeyDown:
-			if m.speed > 1 {
-				m.speed--
-				m.timer.Interval = GetDelay(m.speed)
+			if m.Speed > 1 {
+				m.Speed--
+				m.Timer.Interval = GetDelay(m.Speed)
+			}
+		case tea.KeyRunes:
+			switch string(msg.Runes) {
+			case "p":
+				m.palette++
+				if m.palette >= len(palettes) {
+					m.palette = 0
+				}
+			case "q":
+				return m, tea.Quit
 			}
 		}
 	case tea.WindowSizeMsg:
-		m.rows = msg.Height
-		m.cols = msg.Width
-		m.grid = automata.NewGrid(m.rows, m.cols, m.seed)
+		m.Rows = msg.Height
+		m.Cols = msg.Width
+		m.Grid = automata.NewGrid(m.Rows, m.Cols, m.Seed)
 	}
-	m.grid.Update()
-	m.offset++
-	m.noise.SetNoiseOffsetY(m.offset)
-	m.timer, cmd = m.timer.Update(msg)
+	m.Grid.Update()
+	m.Offset++
+	m.Noise.SetNoiseOffsetY(m.Offset)
+	m.Timer, cmd = m.Timer.Update(msg)
 	return m, cmd
 }
 
 func (m Model) View() string {
-	rows := strings.Split(m.grid.ToString(), "\n")
+	rows := strings.Split(m.Grid.ToString(), "\n")
 	n := len(rows)
 	var s string
 	for i, row := range rows {
 		for j, c := range row {
-			noise := m.noise.Noise2D(float64(j), float64(i))
-			color, _ := colorful.MakeColor(synthWaveGradientFull.Color(noise))
+			noise := m.Noise.Noise2D(float64(j), float64(i))
+			color, _ := colorful.MakeColor(palettes[m.palette].Color(noise))
 			s += lipgloss.NewStyle().Foreground(lipgloss.Color(color.Hex())).Render(string(c))
 		}
 		if i < n-1 {
