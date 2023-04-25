@@ -3,12 +3,13 @@ package automata
 import "math/rand"
 
 type Grid struct {
-	rows int
-	cols int
-	seed int64
-	wrap bool
-	head *row
-	tail *row
+	rows   int
+	cols   int
+	seed   int64
+	wrap   bool
+	invert bool
+	head   *row
+	tail   *row
 }
 
 type row struct {
@@ -26,7 +27,7 @@ func newRowFromSeed(n int, seed int64) *row {
 	return r
 }
 
-func rule30(r *row, wrap bool) *row {
+func rule30(r *row, wrap, invert bool) *row {
 	n := len(r.data)
 	next := &row{}
 	next.data = make([]bool, n)
@@ -52,6 +53,9 @@ func rule30(r *row, wrap bool) *row {
 		}
 		center = r.data[i]
 		next.data[i] = left != (center || right)
+		if invert {
+			next.data[i] = !next.data[i]
+		}
 	}
 	return next
 }
@@ -69,14 +73,14 @@ func (g *Grid) init() {
 	g.head = newRowFromSeed(g.cols, g.seed)
 	g.tail = g.head
 	for i := 0; i < g.rows; i++ {
-		g.tail.next = rule30(g.tail, g.wrap)
+		g.tail.next = rule30(g.tail, g.wrap, g.invert)
 		g.tail = g.tail.next
 	}
 }
 
 func (g *Grid) Update() {
 	g.head = g.head.next
-	newRow := rule30(g.tail, g.wrap)
+	newRow := rule30(g.tail, g.wrap, g.invert)
 	g.tail.next = newRow
 	g.tail = newRow
 }
@@ -106,6 +110,10 @@ func (g *Grid) ToArray() [][]bool {
 
 func (g *Grid) ToggleWrap() {
 	g.wrap = !g.wrap
+}
+
+func (g *Grid) ToggleInvert() {
+	g.invert = !g.invert
 }
 
 func (g *Grid) IncrementSeed() {

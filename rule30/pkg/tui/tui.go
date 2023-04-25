@@ -89,6 +89,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case tea.KeyRunes:
 			switch string(msg.Runes) {
+			case "i":
+				m.Grid.ToggleInvert()
 			case "p":
 				m.palette++
 				if m.palette >= len(palettes) {

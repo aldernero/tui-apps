@@ -14,6 +14,7 @@ go install github.com/aldernero/tui-apps/rule30@latest
 
 * `Esc`, `Enter`, `Ctrl+c`, `q` - quit
 * `Space` - Toggle between wrapped bounds or random bounds (default is random).
+* `i` - invert
 * `p` - cycle through color palettes
 * `Up/Down` - increase/decrease speed, there are 20 speeds, starts in the middle
 * `Left/Right` - increase/decrease the seed, restarts the simulation
